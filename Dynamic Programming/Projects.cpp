@@ -11,8 +11,8 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
-#include <ext/pb_ds/assoc_container.hpp>
-using namespace __gnu_pbds;
+//#include <ext/pb_ds/assoc_container.hpp>
+//using namespace __gnu_pbds;
 using namespace std;
 typedef pair<int, int> pii;
 typedef pair<pii, int> piii;
@@ -22,6 +22,15 @@ typedef pair<ll, ll> pll;
 //#define min(n, m) ((n<m)?n:m)
 #define f first
 #define s second
+ 
+struct chash { /// use most bits rather than just the lowest ones
+    const uint64_t C = ll(2e18*(3.14))+71; // large odd number
+    const int RANDOM = rand(); // random 32-bit number
+    ll operator()(ll x) const {
+        // https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
+        return __builtin_bswap64((x^RANDOM)*C);
+    }
+};
  
 int sz;
 ll tre[800010];
@@ -60,11 +69,9 @@ struct st
     }
 };
 st nums[200010];
-gp_hash_table<ll, null_type> cooo;
 ll coo[400010];
-gp_hash_table<ll, int> hsh;
-unordered_set<ll> cooo2;
-unordered_map<ll, int> hsh2;
+unordered_set<ll, chash> cooo;
+unordered_map<ll, int, chash> hsh;
 ll dp[200010];
 int main()
 {
@@ -74,46 +81,23 @@ int main()
     for(int i = 0; i < n; i ++)
     {
         cin >> nums[i].a >> nums[i].b >> nums[i].p;
-        if(nums[0].a != 65536) { cooo.insert(nums[i].a); cooo.insert(nums[i].b); }
-        else { cooo2.insert(nums[i].a); cooo2.insert(nums[i].b); }
+        cooo.insert(nums[i].a); cooo.insert(nums[i].b);
     }
-    if(nums[0].a != 65536)
+    for(auto cur : cooo) { coo[cnt] = cur; cnt ++; }
+    sort(coo, coo + cnt); int cnt2 = 1;
+    for(int i = 0; i < cnt; i ++) { hsh[coo[i]] = cnt2; cnt2 ++; }
+    for(int i = 0; i < n; i ++) { nums[i].a = hsh[nums[i].a]; nums[i].b = hsh[nums[i].b]; }
+    sort(nums, nums + n);
+    sz = (int)cooo.size() + 1;
+    makeTree(tre);
+    for(int i = 0; i < n; i ++)
     {
-        for(auto cur : cooo) { coo[cnt] = cur; cnt ++; }
-        sort(coo, coo + cnt); int cnt2 = 1;
-        for(int i = 0; i < cnt; i ++) { hsh[coo[i]] = cnt2; cnt2 ++; }
-        for(int i = 0; i < n; i ++) { nums[i].a = hsh[nums[i].a]; nums[i].b = hsh[nums[i].b]; }
-        sort(nums, nums + n);
-        sz = (int)cooo.size() + 1;
-        makeTree(tre);
-        for(int i = 0; i < n; i ++)
-        {
-            dp[i] = maxQ(0, (int)nums[i].a) + nums[i].p;
-            if(dp[i] > ans) ans = dp[i];
-            if(dp[i] > tre[nums[i].b + sz])
-                update((int)nums[i].b, dp[i]);
-            else
-                update((int)nums[i].b, tre[nums[i].b + sz]);
-        }
-    }
-    else
-    {
-        for(auto cur : cooo2) { coo[cnt] = cur; cnt ++; }
-        sort(coo, coo + cnt); int cnt2 = 1;
-        for(int i = 0; i < cnt; i ++) { hsh2[coo[i]] = cnt2; cnt2 ++; }
-        for(int i = 0; i < n; i ++) { nums[i].a = hsh2[nums[i].a]; nums[i].b = hsh2[nums[i].b]; }
-        sort(nums, nums + n);
-        sz = (int)cooo2.size() + 1;
-        makeTree(tre);
-        for(int i = 0; i < n; i ++)
-        {
-            dp[i] = maxQ(0, (int)nums[i].a) + nums[i].p;
-            if(dp[i] > ans) ans = dp[i];
-            if(dp[i] > tre[nums[i].b + sz])
-                update((int)nums[i].b, dp[i]);
-            else
-                update((int)nums[i].b, tre[nums[i].b + sz]);
-        }
+        dp[i] = maxQ(0, (int)nums[i].a) + nums[i].p;
+        if(dp[i] > ans) ans = dp[i];
+        if(dp[i] > tre[nums[i].b + sz])
+            update((int)nums[i].b, dp[i]);
+        else
+            update((int)nums[i].b, tre[nums[i].b + sz]);
     }
     cout << ans << "\n";
 }
