@@ -25,7 +25,7 @@ typedef pair<ll, ll> pll;
 #define s second
 
 vector<vector<int>> fib[11];
-vector<int> nx[1050];
+vector<int> nx[1050]; // around 5 to 6 for each state
 vector<pii> small;
 vector<int> curNx;
 int dp[1010][1050];
