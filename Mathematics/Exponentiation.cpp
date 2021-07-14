@@ -1,10 +1,14 @@
 #include <iostream>
 #include <string.h>
+#include <random>
 #include <fstream>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <iomanip>
 #include <algorithm>
 #include <math.h>
+#include <cmath>
 #include <vector>
 #include <stack>
 #include <queue>
@@ -13,31 +17,45 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <complex>
 //#include <ext/pb_ds/assoc_container.hpp>
 //using namespace __gnu_pbds;
 using namespace std;
 typedef pair<int, int> pii;
+typedef pair<int, string> pis;
+typedef pair<string, string> pss;
+typedef pair<int, char> pic;
 typedef pair<pii, int> piii;
+typedef pair<double, double> pdd;
 typedef long long ll;
+typedef unsigned long long ull;
+typedef unsigned int uint;
 typedef pair<ll, ll> pll;
+typedef pair<int, ll> pil;
+typedef pair<ull, ull> pull;
+typedef complex<double> cd;
 //#define max(n, m) ((n>m)?n:m)
 //#define min(n, m) ((n<m)?n:m)
 #define f first
 #define s second
+#define input() ios_base::sync_with_stdio(0);cin.tie(0);
 
-int mod = 1000000007;
-long long exp(long long base, long long power)
+ll mod = 1000000007;
+ll exp(ll base, ll power)
 {
-    if(power == 0) return 1;
-    if(power == 1) return base;
-    long long cur = exp(base, power / 2);
-    long long ans = (cur * cur) % mod;
-    if(power % 2 == 1) ans = (ans * base) % mod;
-    return ans % mod;
+    ll ans = 1;
+    while(power)
+    {
+        if(power&1) ans = (ans * base) % mod;
+        base = (base * base) % mod;
+        power /= 2;
+    }
+    return ans;
 }
-
+ 
 int main()
 {
+    input();
     int n;
     ll a, b;
     cin >> n;
