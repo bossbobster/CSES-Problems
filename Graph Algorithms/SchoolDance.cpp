@@ -1,4 +1,108 @@
+//FASTER ALGO
+
 #include <iostream>
+#include <string.h>
+#include <random>
+#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <iomanip>
+#include <algorithm>
+#include <math.h>
+#include <cmath>
+#include <vector>
+#include <stack>
+#include <queue>
+#include <bitset>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <complex>
+//#include <ext/pb_ds/assoc_container.hpp>
+//using namespace __gnu_pbds;
+using namespace std;
+typedef pair<int, int> pii;
+typedef pair<int, string> pis;
+typedef pair<string, string> pss;
+typedef pair<int, char> pic;
+typedef pair<pii, int> piii;
+typedef pair<double, double> pdd;
+typedef long long ll;
+typedef unsigned long long ull;
+typedef unsigned int uint;
+typedef pair<ll, ll> pll;
+typedef pair<int, ll> pil;
+typedef pair<ull, ull> pull;
+typedef complex<double> cd;
+//#define max(n, m) ((n>m)?n:m)
+//#define min(n, m) ((n<m)?n:m)
+#define f first
+#define s second
+#define input() ios_base::sync_with_stdio(0);cin.tie(0);
+ 
+ifstream fin("cuplaj.in");
+ofstream fout("cuplaj.out");
+ 
+int n, m, k, a, b, ans = 0;
+vector<int> adj[510];
+bitset<510> visited;
+int l[510], r[510];
+bool good;
+int pairUp(int x)
+{
+    if(visited[x]) return 0;
+    visited[x] = 1;
+    for(auto it : adj[x])
+        if(!l[it])
+        {
+            l[r[x]] = 0, r[x] = it, l[it] = x;
+            good = true;
+            return 1;
+        }
+    for(auto it : adj[x])
+        if(l[it] != x && pairUp(l[it]))
+        {
+            l[r[x]] = 0, r[x] = it, l[it] = x;
+            good = true;
+            return 1;
+        }
+    return 0;
+}
+int main()
+{
+    input();
+    cin >> n >> m >> k;
+    for(int i = 0; i < k; i ++)
+    {
+        cin >> a >> b;
+        adj[a].push_back(b);
+    }
+    do
+    {
+        good = false;
+        visited.reset();
+        for(int i = 1; i <= n; i ++)
+            if(!r[i])
+                pairUp(i);
+    } while(good);
+    for(int i = 1; i <= n; i ++)
+        if(r[i])
+            ans ++;
+    cout << ans << "\n";
+    for(int i = 1; i <= n; i ++)
+        if(r[i])
+            cout << i << " " << r[i] << "\n";
+}
+
+
+
+
+
+//SLOWER ALGO
+
+/*#include <iostream>
 #include <string.h>
 #include <random>
 #include <fstream>
@@ -103,3 +207,4 @@ int main()
     for(int i = 0; i < v.size(); i ++)
         cout << v[i].f << " " << v[i].s << "\n";
 }
+*/
