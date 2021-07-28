@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string.h>
+#include <random>
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,14 +17,13 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
-#pragma GCC optimize ("O2")
-#pragma GCC target ("avx,avx2,fma")
-#pragma GCC optimize("unroll-loops")
+#include <complex>
 //#include <ext/pb_ds/assoc_container.hpp>
 //using namespace __gnu_pbds;
 using namespace std;
 typedef pair<int, int> pii;
 typedef pair<int, string> pis;
+typedef pair<string, string> pss;
 typedef pair<int, char> pic;
 typedef pair<pii, int> piii;
 typedef pair<double, double> pdd;
@@ -33,145 +33,119 @@ typedef unsigned int uint;
 typedef pair<ll, ll> pll;
 typedef pair<int, ll> pil;
 typedef pair<ull, ull> pull;
+typedef complex<double> cd;
 //#define max(n, m) ((n>m)?n:m)
 //#define min(n, m) ((n<m)?n:m)
 #define f first
 #define s second
 #define input() ios_base::sync_with_stdio(0);cin.tie(0);
 
-int n, q, a, b, type;
-ll nums[200010];
-vector<int> adj[200010];
-int lca[200010][20];
-int size[200010];
-int dep[200010];
-ll seg[800010];
-int ogToSeg[200010];
-int top[200010];
-void segUpdate(int cur, int l, int r, int idx, int val)
+int n, m, a, b, cnt = 0, type, bitI = 0;
+ll nums[400010];
+vector<int> adj[400010];
+ll sz[400010];
+int chain[400010];
+int pars[400010];
+int idx[400010];
+int arr[400010], dep[400010];
+int bitIdx[400010];
+int chainSt[400010];
+vector<ll> tree[200010];
+ll chainSz[400010];
+void up(int which, int idx, ll val)
 {
-    if(l == r) seg[cur] = val;
-    else
-    {
-        int mid = (l + r) / 2;
-        if(idx <= mid) segUpdate(cur * 2, l, mid, idx, val);
-        else segUpdate(cur * 2 + 1, mid + 1, r, idx, val);
-        seg[cur] = seg[cur * 2] + seg[cur * 2 + 1];
-    }
+    tree[which][idx + chainSz[which]] = val;
+    idx += chainSz[which];
+    for(int i = idx; i > 1; i >>= 1)
+        tree[which][i >> 1] = tree[which][i] + tree[which][i ^ 1];
 }
-void up(int idx, int val) { return segUpdate(1, 0, n - 1, idx, val); }
-ll segMx(int cur, int l, int r, int lq, int rq)
-{
-    if(l >= lq && r <= rq) return seg[cur];
-    int mid = (l + r) / 2; ll ans = 0;
-    if(mid >= lq) ans += segMx(cur * 2, l, mid, lq, rq);
-    if(mid + 1 <= rq) ans += segMx(cur * 2 + 1, mid + 1, r, lq, rq);
-    return ans;
-}
-ll mx(int lq, int rq) { return segMx(1, 0, n - 1, lq, rq); }
-int LCA(int a, int b)
-{
-    if(dep[b] > dep[a]) swap(a, b);
-    for(int i = 19; i >= 0; i --)
-        if(dep[a] - (1 << i) >= dep[b])
-            a = lca[a][i];
-    for(int i = 19; i >= 0; i --)
-        if(lca[a][i] != lca[b][i])
-        {
-            a = lca[a][i]; b = lca[b][i];
-        }
-    if(a != b)
-        a = lca[a][0];
-    return a;
-}
-void dfs(int cur, int par)
-{
-    size[cur] ++;
-    for(int other : adj[cur])
-    {
-        if(other == par) continue;
-        dep[other] = dep[cur] + 1;
-        lca[other][0] = cur;
-        dfs(other, cur);
-        size[cur] += size[other];
-    }
-}
-void dfsHLD(int cur, int topIdx, int par, int &idx)
-{
-    ogToSeg[cur] = idx; idx ++;
-    up(ogToSeg[cur], nums[cur]);
-    top[cur] = topIdx;
-    int maxN = -1, maxIdx = -1;
-    for(int other : adj[cur])
-    {
-        if(other == par) continue;
-        if(size[other] > maxN)
-        {
-            maxN = size[other];
-            maxIdx = other;
-        }
-    }
-    if(maxIdx < 0) return;
-    dfsHLD(maxIdx, topIdx, cur, idx);
-    for(int other : adj[cur])
-        if(other != par && other != maxIdx)
-            dfsHLD(other, other, cur, idx);
-}
-ll pathUtil(int cur, int par)
+ll sumQ(int which, int l, int r) // inclusive l, exclusive r
 {
     ll ans = 0;
-    while(cur != par)
+    for(l += chainSz[which], r += chainSz[which]; l < r; l >>= 1, r >>= 1)
     {
-        if(top[cur] == cur)
-        {
-            ans += nums[cur];
-            cur = lca[cur][0];
-        }
-        else if(dep[top[cur]] > dep[par])
-        {
-            ans += mx(ogToSeg[top[cur]], ogToSeg[cur]);
-            cur = lca[top[cur]][0];
-        }
-        else
-        {
-            ans += mx(ogToSeg[par] + 1, ogToSeg[cur]);
-            break;
-        }
+        if(l & 1)
+            ans += tree[which][l ++];
+        if(r & 1)
+            ans += tree[which][-- r];
     }
     return ans;
 }
-ll path(int a, int b)
+void dfs1(int cur, int par)
 {
-    int lcaAB = LCA(a, b);
-    return pathUtil(a, lcaAB) + pathUtil(b, lcaAB) + nums[lcaAB];
+    pars[cur] = par;
+    for(auto it : adj[cur])
+    {
+        if(it == par) continue;
+        dfs1(it, cur);
+        sz[cur] += sz[it];
+    }
+    sz[cur] ++;
+}
+void dfs2(int cur, int par)
+{
+    chain[cur] = cnt; chainSz[cnt] ++;
+    bitIdx[cur] = bitI++;
+    if(adj[cur].size() == 1 && adj[cur][0] == par) return;
+    int mx = 400005;
+    for(int i = 0; i < adj[cur].size(); i ++)
+    {
+        if(adj[cur][i] == par) continue;
+        if(sz[adj[cur][i]] > sz[mx]) mx = adj[cur][i];
+    }
+    dfs2(mx, cur);
+    for(int i = 0; i < adj[cur].size(); i ++)
+    {
+        if(adj[cur][i] == par || adj[cur][i] == mx) continue;
+        cnt++; chainSt[cnt] = adj[cur][i]; bitI = 0; dfs2(adj[cur][i], cur);
+    }
+}
+ll path(int st, int en) //st is up, en is down
+{
+    ll ans = 0;
+    if(chain[st] == chain[en]) return sumQ(chain[en], bitIdx[st], bitIdx[en]+1);
+    ans = sumQ(chain[en], 0, bitIdx[en]+1);
+    en = pars[chainSt[chain[en]]];
+    while(chain[st] != chain[en])
+    {
+        ans += sumQ(chain[en], bitIdx[chainSt[chain[en]]], bitIdx[en]+1);
+        en = pars[chainSt[chain[en]]];
+    }
+    ans += sumQ(chain[en], bitIdx[st], bitIdx[en]+1);
+    return ans;
 }
 int main()
 {
     input();
-    cin >> n >> q;
+    cin >> n >> m;
     for(int i = 0; i < n; i ++)
         cin >> nums[i];
     for(int i = 0; i < n-1; i ++)
     {
-        cin >> a >> b; a --; b --;
+        cin >> a >> b; a--; b--;
         adj[a].push_back(b); adj[b].push_back(a);
     }
-    dfs(0, -1);
-    for(int i = 1; i < 20; i ++)
-        for(int j = 0; j < n; j ++)
-            lca[j][i] = lca[lca[j][i - 1]][i - 1];
-    int idx = 0;
-    dfsHLD(0, 0, -1, idx);
-    while(q--)
+    sz[400005] = -1;
+    dfs1(0, -1); dfs2(0, -1);
+    for(int i = 0; i <= cnt; i ++)
+        tree[i].resize(chainSz[i]*4);
+    for(int i = 0; i < n; i ++)
+        up(chain[i], bitIdx[i], nums[i]);
+    while(m--)
     {
-        cin >> type >> a; a--;
+        cin >> type >> a;
         if(type == 1)
         {
             cin >> b;
+            a--;
+            up(chain[a], bitIdx[a], b);
             nums[a] = b;
-            up(ogToSeg[a], b);
         }
         else
-            cout << path(0, a) << "\n";
+        {
+            a--;
+            cout << path(0, a) << ((m==0)?"\n":" ");
+        }
     }
+    return 0;
 }
