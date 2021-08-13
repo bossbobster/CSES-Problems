@@ -1,0 +1,124 @@
+#include <iostream>
+#include <string.h>
+#include <random>
+#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <iomanip>
+#include <algorithm>
+#include <math.h>
+#include <cmath>
+#include <vector>
+#include <stack>
+#include <queue>
+#include <bitset>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <complex>
+#include <valarray>
+//#include <ext/pb_ds/assoc_container.hpp>
+//using namespace __gnu_pbds;
+using namespace std;
+typedef pair<int, int> pii;
+typedef pair<int, string> pis;
+typedef pair<string, string> pss;
+typedef pair<int, char> pic;
+typedef pair<pii, int> piii;
+typedef pair<double, double> pdd;
+typedef pair<float, float> pff;
+typedef long long ll;
+typedef long double ld;
+typedef unsigned long long ull;
+typedef unsigned int uint;
+typedef pair<ll, ll> pll;
+typedef pair<int, ll> pil;
+typedef pair<ull, ull> pull;
+typedef complex<double> cd;
+//#define max(n, m) ((n>m)?n:m)
+//#define min(n, m) ((n<m)?n:m)
+#define f first
+#define s second
+#define input() ios_base::sync_with_stdio(0);cin.tie(0);cout.tie(0);
+
+int n, lg, m, m2, k;
+double theta;
+pdd omega, mult, t, u;
+const double pi = 3.1415926535897932384626433;
+bool inv;
+uint bitR(uint x)
+{
+    int n = 0;
+    for (int i = 0; i < lg; i++)
+    {
+        n <<= 1;
+        n |= (x & 1);
+        x >>= 1;
+    }
+    return n;
+}
+void fft(vector<pdd> &p)
+{
+    for(int i = 1; i <= lg; i ++)
+    {
+        m = 1<<i; m2 = m>>1;
+        theta = pi*2/m*(inv?-1:1), omega = {1,0}, mult = {cos(theta), sin(theta)};
+        for(int j = 0; j < m2; j ++)
+        {
+            for(int l = j; l < k; l += m)
+            {
+                t = {p[l+m2].first*omega.first-p[l+m2].second*omega.second, p[l+m2].first*omega.second+p[l+m2].second*omega.first};
+                u = p[l];
+                p[l] = {t.first+u.first, t.second+u.second};
+                p[l+m2] = {u.first-t.first, u.second-t.second};
+                if(inv)
+                {
+                    p[l].first /= 2; p[l].second /= 2; p[l+m2].first /= 2; p[l+m2].second /= 2;
+                }
+            }
+            omega = {omega.first*mult.first-omega.second*mult.second, omega.f*mult.second+omega.second*mult.first};
+        }
+    }
+}
+vector<int> a, b;
+int main()
+{
+    input();
+    int n, m, num, ogk, rev;
+    cin >> k >> n >> m; ogk = k;
+    while(log2(k) - floor(log2(k)) > 0.000001) k++;
+    k*=2;
+    a.resize(k); b.resize(k);
+    for(int i = 0; i < n; i ++)
+    {
+        cin >> num; a[num-1]++;
+    }
+    for(int i = 0; i < m; i ++)
+    {
+        cin >> num; b[num-1]++;
+    }
+    vector<pdd> fa, fb, fa1, fb1;
+    for(int i = 0; i < a.size(); i ++)
+        fa1.push_back({a[i],0});
+    for(int i = 0; i < b.size(); i ++)
+        fb1.push_back({b[i],0});
+    lg = log2(k); fa.resize(k); fb.resize(k);
+    for(uint i = 0; i < k; i ++)
+    {
+        rev = bitR(i);
+        fa[i] = fa1[rev]; fb[i] = fb1[rev];
+    }
+    inv = false;
+    fft(fa); fft(fb);
+    for(int i = 0; i < k; i ++)
+        fa[i] = {fa[i].first*fb[i].first-fa[i].second*fb[i].second, fa[i].first*fb[i].second+fa[i].second*fb[i].first};
+    vector<pdd> faF; faF.resize(k);
+    for(uint i = 0; i < k; i ++)
+        rev = bitR(i), faF[i] = fa[rev];
+    inv = true;
+    fft(faF);
+    for(int i = 0; i < ogk*2-1; i ++)
+        cout << (ll)round(abs(faF[i].first)) << ((i==ogk*2-2)?"\n":" ");
+}
