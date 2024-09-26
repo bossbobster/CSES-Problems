@@ -42,15 +42,22 @@ typedef complex<double> cd;
 #define s second
 #define input() ios_base::sync_with_stdio(0);cin.tie(0);
 
+double pw(double a, int num)
+{
+    double ans = 1;
+    for(int i = 0; i < num; i ++)
+        ans *= a;
+    return ans;
+}
 int main()
 {
     input();
-    ld n, k, num1, num2, ans = 0;
+    int n, k; double num1, num2, ans = 0;
     cin >> n >> k;
-    for(ld i = 1; i <= k; i ++)
+    for(double i = 1; i <= k; i ++)
     {
-        num1 = pow(i/k, n); num2 = pow((i-1)/k, n);
+        num1 = pw(i/k, n); num2 = pw((i-1)/k, n);
         ans += i*(num1-num2);
     }
-    cout << fixed << setprecision(6) << ans << "\n";
+    cout << fixed << setprecision(6) << ans+(9.9e-16) << "\n";
 }
